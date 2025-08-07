@@ -1,0 +1,63 @@
+Code To Use If Using Motor Shield
+#include <AFMotor.h>
+
+// --- Pin configuration ---
+const int buttonPin = A2;
+const int ledPin = A1;
+const int tempPin = A0;
+
+AF_DCMotor motor(4);
+
+void setup() {
+  pinMode(buttonPin, INPUT);
+  pinMode(ledPin, OUTPUT);
+  Serial.begin(9600);
+}
+
+void loop() {
+  int sensorValue = analogRead(tempPin);
+  float voltage = sensorValue * (5.0 / 1023.0);
+  float temperatureC = (voltage - 0.5) * 100;
+  float temperatureF = (temperatureC * 9.0 / 5.0) + 32;
+
+  Serial.print("Temperature (F): ");
+  Serial.println(temperatureF);
+
+  if (temperatureF >= 60.0) {
+    digitalWrite(ledPin, HIGH);
+
+    if (digitalRead(buttonPin) == HIGH) {
+      Serial.println("Button pressed. Starting fan.");
+
+      for (int speed = 0; speed <= 255; speed += 5) {
+        motor.setSpeed(speed);
+        motor.run(FORWARD);
+        delay(30);
+      }
+
+      while (digitalRead(buttonPin) == HIGH) {
+        motor.setSpeed(255);
+        motor.run(FORWARD);
+        delay(50);
+      }
+
+      Serial.println("Button released. Stopping fan.");
+
+      for (int speed = 255; speed >= 0; speed -= 5) {
+        motor.setSpeed(speed);
+        motor.run(FORWARD);
+        delay(30);
+      }
+
+      motor.run(RELEASE);
+    } else {
+      motor.run(RELEASE);
+    }
+x
+  } else {
+    digitalWrite(ledPin, LOW);
+    motor.run(RELEASE);
+  }
+
+  delay(200);
+}
